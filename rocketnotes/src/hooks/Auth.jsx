@@ -14,7 +14,7 @@ async function signIn({email, password}){
         localStorage.setItem("@rocketnotes:user", JSON.stringify(user))
         localStorage.setItem("@rocketnotes:token", token)
 
-        api.defaults.headers.authorization = `Bear ${token}`
+        api.defaults.headers.common['Authorization'] = `Bear ${token}`
         setData({user, token})
        
     }catch(error) {
@@ -33,12 +33,38 @@ async function signIn({email, password}){
     setData({})
  }
 
+ async function updateProfile({user, avatarFile}){
+    try {
+        if(avatarFile){
+            const fileUploadForm = new FormData()
+
+            fileUploadForm.append("avatar", avatarFile)
+
+            const response = await api.patch("/users/avatar", fileUploadForm )
+
+            user.avatar = response.data.avatar
+        }
+
+        await api.put("/users", user)
+        localStorage.setItem("@rocketnotes:user", JSON.stringify(user))
+
+        setData({user, token: data.token})
+        alert("perfil atualizado")
+    } catch (error) {
+        if (error.response) {
+            alert(error.response.data.message)
+        }else{
+            alert("não foi possivel atualizar o perfil")
+        }
+    }
+ }
+
     useEffect(() => {
         const token = localStorage.getItem("@rocketnotes:token")
         const user = localStorage.getItem("@rocketnotes:user")
 
         if (token && user) {
-            api.defaults.headers.authorization = `Bear ${token}`
+            api.defaults.headers.common['Authorization'] = `Bear ${token}`
 
             setData({
                 token,
@@ -51,7 +77,8 @@ async function signIn({email, password}){
         <AuthContext.Provider value={{
             signIn,
             user: data.user,
-            signOut
+            signOut,
+            updateProfile
         }}
         
         >
